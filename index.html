@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Concrete Examples — A Memory Technique</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+
+  :root {
+    --bg: #f7f5f0;
+    --card: #ffffff;
+    --primary: #3d5a80;
+    --primary-light: #e8eef4;
+    --accent: #ee6c4d;
+    --accent-light: #fdf0ed;
+    --text: #2b2d42;
+    --text-muted: #6b7280;
+    --border: #e5e2db;
+    --success: #4caf50;
+    --success-light: #e8f5e9;
+    --shadow: 0 2px 12px rgba(0,0,0,0.06);
+    --shadow-hover: 0 4px 20px rgba(0,0,0,0.1);
+    --radius: 12px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    overflow-x: hidden;
+  }
+
+  .hero {
+    background: linear-gradient(135deg, #3d5a80 0%, #2b3f5c 100%);
+    color: white;
+    padding: 60px 24px 50px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0; right: 0;
+    height: 40px;
+    background: var(--bg);
+    clip-path: ellipse(55% 100% at 50% 100%);
+  }
+  .hero-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .hero p {
+    max-width: 560px;
+    margin: 0 auto;
+    opacity: 0.85;
+    font-size: 1.05rem;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  /* ---- Navigation Tabs ---- */
+  .tab-nav {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+    flex-wrap: nowrap;
+    margin: 36px auto 30px;
+    padding: 5px;
+    background: var(--card);
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    max-width: 800px;
+    width: 100%;
+  }
+  .tab-btn {
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+    flex: 1 1 auto;
+    text-align: center;
+  }
+  .tab-btn:hover { background: var(--primary-light); color: var(--primary); }
+  .tab-btn.active {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 2px 8px rgba(61,90,128,0.3);
+  }
+
+  .section { display: none; animation: fadeUp 0.4s ease; }
+  .section.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--primary);
+  }
+  .section-subtitle {
+    color: var(--text-muted);
+    margin-bottom: 28px;
+    font-size: 0.95rem;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+  }
+  .card:hover {
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-2px);
+  }
+  .card h3 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card p, .card li { color: var(--text); font-size: 0.93rem; }
+
+  .step-number {
+    background: var(--primary);
+    color: white;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* ---- Drag & Drop Sort ---- */
+  .method-interactive {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-top: 24px;
+    box-shadow: var(--shadow);
+  }
+  .method-interactive h4 { font-size: 1rem; font-weight: 600; margin-bottom: 6px; }
+  .method-interactive p.hint { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px; }
+  .sort-list { list-style: none; }
+  .sort-item {
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    user-select: none;
+  }
+  .sort-item:active { cursor: grabbing; }
+  .sort-item .drag-handle { color: var(--text-muted); font-size: 1.1rem; flex-shrink: 0; }
+  .sort-item.dragging { opacity: 0.4; border-style: dashed; }
+  .sort-item.over { border-color: var(--accent); background: var(--accent-light); }
+  .sort-item.correct-pos { border-color: var(--success); background: var(--success-light); }
+  .sort-item.wrong-pos { border-color: #ef5350; background: #fbe9e7; }
+  .sort-check-btn {
+    margin-top: 12px;
+    padding: 10px 24px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .sort-check-btn:hover { background: #2b3f5c; }
+  .sort-feedback { margin-top: 10px; font-size: 0.88rem; font-weight: 500; min-height: 24px; }
+
+  /* ---- Memory Flow ---- */
+  .memory-flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 24px 0;
+  }
+  .memory-node {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 130px;
+  }
+  .memory-node:hover, .memory-node.active-node {
+    border-color: var(--accent);
+    background: var(--accent-light);
+    transform: scale(1.04);
+  }
+  .memory-node .node-title { font-weight: 600; font-size: 0.85rem; }
+  .memory-node .node-icon { font-size: 1.3rem; margin-bottom: 4px; }
+  .flow-arrow { font-size: 1.2rem; color: var(--text-muted); padding: 0 6px; }
+  .node-detail {
+    margin-top: 16px;
+    padding: 16px 20px;
+    background: var(--accent-light);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    font-size: 0.9rem;
+    display: none;
+    animation: fadeUp 0.3s ease;
+  }
+  .node-detail.visible { display: block; }
+
+  /* ---- Effort Meter ---- */
+  .effort-meter {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-top: 20px;
+    box-shadow: var(--shadow);
+  }
+  .effort-meter h4 { font-size: 1rem; font-weight: 600; margin-bottom: 14px; }
+  .effort-bar-group { margin-bottom: 14px; }
+  .effort-bar-group label {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 0.85rem; font-weight: 500; margin-bottom: 6px;
+  }
+  .effort-bar-group label .tag {
+    font-size: 0.72rem;
+    background: var(--primary-light);
+    color: var(--primary);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+    transition: all 0.3s;
+  }
+  .effort-track {
+    width: 100%;
+    height: 22px;
+    background: #eae8e3;
+    border-radius: 11px;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  .effort-fill {
+    height: 100%;
+    border-radius: 11px;
+    transition: width 0.6s cubic-bezier(.22,.61,.36,1), background 0.3s;
+    position: relative;
+  }
+  .effort-fill::after {
+    content: attr(data-pct);
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: white;
+  }
+  .effort-fill.low { background: linear-gradient(90deg, #ef5350, #e57373); }
+  .effort-fill.max { background: linear-gradient(90deg, var(--primary), #5a7faa); }
+  .effort-result {
+    margin-top: 16px;
+    padding: 14px 18px;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    text-align: center;
+    transition: all 0.3s ease;
+  }
+
+  /* ---- Canvas Chart ---- */
+  .chart-wrapper {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-top: 24px;
+    box-shadow: var(--shadow);
+  }
+  .chart-wrapper h4 { font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
+  .chart-wrapper .chart-subtitle { font-size: 0.84rem; color: var(--text-muted); margin-bottom: 16px; }
+
+  /* ---- Brain ---- */
+  .brain-card { display: flex; gap: 16px; align-items: flex-start; padding: 20px; }
+  .brain-emoji { font-size: 2rem; flex-shrink: 0; }
+  .brain-card h4 { font-weight: 600; margin-bottom: 4px; }
+  .brain-card p { font-size: 0.9rem; color: var(--text-muted); }
+
+  .health-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-top: 20px;
+  }
+  .health-item {
+    background: var(--success-light);
+    border: 1px solid #c8e6c9;
+    border-radius: var(--radius);
+    padding: 18px 16px;
+    text-align: center;
+    transition: transform 0.2s ease;
+  }
+  .health-item:hover { transform: translateY(-3px); }
+  .health-item .h-icon { font-size: 1.6rem; margin-bottom: 6px; }
+  .health-item .h-label { font-weight: 600; font-size: 0.88rem; }
+  .health-item .h-detail { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; }
+
+  /* Sleep bar chart */
+  .sleep-chart-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-top: 20px;
+    box-shadow: var(--shadow);
+  }
+  .sleep-chart-box h4 { font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
+  .sleep-chart-box .chart-subtitle { font-size: 0.84rem; color: var(--text-muted); margin-bottom: 16px; }
+  .bar-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    height: 180px;
+    padding: 0 4px;
+    border-bottom: 2px solid var(--border);
+  }
+  .bar-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    height: 100%;
+    position: relative;
+    cursor: pointer;
+  }
+  .bar-col .bar {
+    width: 100%;
+    max-width: 50px;
+    border-radius: 6px 6px 0 0;
+    transition: height 0.8s cubic-bezier(.22,.61,.36,1);
+  }
+  .bar-col .bar-val { font-size: 0.72rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .bar-col .bar-label { font-size: 0.72rem; color: var(--text-muted); margin-top: 8px; text-align: center; }
+  .bar-tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    z-index: 5;
+  }
+  .bar-col:hover .bar-tooltip { display: block; }
+
+  /* ---- Physics Example ---- */
+  .example-step {
+    display: flex; gap: 14px; align-items: flex-start; margin-bottom: 18px;
+  }
+  .example-step .step-badge {
+    background: var(--accent); color: white;
+    width: 30px; height: 30px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem; font-weight: 700; flex-shrink: 0; margin-top: 2px;
+  }
+  .example-step .step-content h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; }
+  .example-step .step-content p { font-size: 0.9rem; color: var(--text-muted); }
+
+  .formula-box {
+    background: var(--primary-light);
+    border: 1px solid #c2d3e6;
+    border-radius: var(--radius);
+    padding: 20px;
+    text-align: center;
+    margin: 20px 0;
+  }
+  .formula-box .formula { font-size: 1.5rem; font-weight: 700; color: var(--primary); font-family: 'Playfair Display', serif; margin-bottom: 6px; }
+  .formula-box .formula-desc { font-size: 0.85rem; color: var(--text-muted); }
+
+  .demo-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin: 20px 0;
+    box-shadow: var(--shadow);
+  }
+  .demo-box h4 { font-weight: 600; margin-bottom: 14px; font-size: 1rem; }
+  .slider-group { margin-bottom: 16px; }
+  .slider-group label {
+    display: flex; justify-content: space-between;
+    font-size: 0.88rem; font-weight: 500; margin-bottom: 6px;
+  }
+  .slider-group input[type="range"] { width: 100%; accent-color: var(--primary); height: 6px; cursor: pointer; }
+  .result-display {
+    background: var(--accent-light);
+    border: 1px solid #f0c4b8;
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+  }
+  .result-display .result-value { font-size: 1.6rem; font-weight: 700; color: var(--accent); }
+  .result-display .result-label { font-size: 0.82rem; color: var(--text-muted); margin-top: 2px; }
+
+  /* Ball Race */
+  .ball-race {
+    margin-top: 20px; padding: 20px;
+    background: var(--bg); border-radius: var(--radius); overflow: hidden;
+  }
+  .ball-race h5 { font-size: 0.85rem; font-weight: 600; margin-bottom: 14px; color: var(--text-muted); }
+  .race-lane { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; height: 40px; }
+  .race-lane .lane-label { font-size: 0.8rem; font-weight: 600; width: 90px; flex-shrink: 0; text-align: right; }
+  .race-track {
+    flex: 1; height: 36px; background: #e5e2db;
+    border-radius: 18px; position: relative; overflow: hidden;
+  }
+  .race-ball {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    left: 4px; width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; transition: left 2s cubic-bezier(.22,.61,.36,1);
+  }
+  .race-btn {
+    margin-top: 10px; padding: 8px 20px;
+    background: var(--accent); color: white; border: none;
+    border-radius: 10px; font-family: 'Inter', sans-serif;
+    font-size: 0.84rem; font-weight: 600; cursor: pointer;
+  }
+  .race-btn:hover { background: #d45a3b; }
+
+  /* Example Builder */
+  .example-builder {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px; margin: 20px 0;
+    box-shadow: var(--shadow);
+  }
+  .example-builder h4 { font-weight: 600; margin-bottom: 6px; font-size: 1rem; }
+  .example-builder .eb-hint { font-size: 0.84rem; color: var(--text-muted); margin-bottom: 14px; }
+  .example-builder textarea {
+    width: 100%; min-height: 80px;
+    border: 1.5px solid var(--border); border-radius: 10px;
+    padding: 12px; font-family: 'Inter', sans-serif; font-size: 0.9rem; resize: vertical;
+    transition: border-color 0.2s;
+  }
+  .example-builder textarea:focus { outline: none; border-color: var(--primary); }
+  .example-builder .eb-actions { display: flex; gap: 10px; margin-top: 10px; align-items: center; flex-wrap: wrap; }
+  .eb-save-btn {
+    padding: 8px 20px; background: var(--primary); color: white; border: none;
+    border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.84rem; font-weight: 600; cursor: pointer;
+  }
+  .eb-save-btn:hover { background: #2b3f5c; }
+  .eb-saved-list { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .eb-saved-item {
+    background: var(--success-light); border: 1px solid #c8e6c9;
+    border-radius: 10px; padding: 10px 14px; font-size: 0.88rem;
+    display: flex; align-items: flex-start; gap: 8px; animation: fadeUp 0.3s ease;
+  }
+  .eb-saved-item .eb-num {
+    background: var(--success); color: white;
+    width: 22px; height: 22px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; font-weight: 700; flex-shrink: 0;
+  }
+
+  /* ---- Quiz ---- */
+  .quiz-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 28px; margin-bottom: 20px; box-shadow: var(--shadow);
+  }
+  .quiz-card h4 { font-size: 1rem; font-weight: 600; margin-bottom: 16px; }
+  .quiz-option {
+    display: block; width: 100%; text-align: left;
+    background: var(--bg); border: 1.5px solid var(--border);
+    border-radius: 10px; padding: 12px 16px; margin-bottom: 8px;
+    font-family: 'Inter', sans-serif; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease;
+  }
+  .quiz-option:hover:not(.selected) { border-color: var(--primary); background: var(--primary-light); }
+  .quiz-option.correct { background: #e8f5e9; border-color: #4caf50; color: #2e7d32; }
+  .quiz-option.incorrect { background: #fbe9e7; border-color: #ef5350; color: #c62828; }
+  .quiz-option.selected { pointer-events: none; }
+  .quiz-feedback { margin-top: 12px; padding: 12px 16px; border-radius: 10px; font-size: 0.88rem; display: none; }
+  .quiz-feedback.show { display: block; animation: fadeUp 0.3s ease; }
+  .quiz-feedback.correct-fb { background: #e8f5e9; color: #2e7d32; }
+  .quiz-feedback.incorrect-fb { background: #fbe9e7; color: #c62828; }
+
+  .quiz-score {
+    text-align: center; padding: 24px;
+    background: var(--primary-light); border-radius: var(--radius); margin-top: 20px;
+  }
+  .quiz-score .score-num { font-size: 2.4rem; font-weight: 700; color: var(--primary); }
+  .quiz-score .score-label { font-size: 0.9rem; color: var(--text-muted); }
+  .quiz-score .score-bar {
+    width: 200px; height: 10px; background: #d1dce8;
+    border-radius: 5px; margin: 12px auto 0; overflow: hidden;
+  }
+  .quiz-score .score-bar-fill {
+    height: 100%; border-radius: 5px; background: var(--primary); transition: width 1s ease;
+  }
+
+  /* ---- Sources ---- */
+  .source-list { list-style: none; }
+  .source-list li {
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+    font-size: 0.84rem; color: var(--text-muted); line-height: 1.6;
+  }
+  .source-list li:last-child { border-bottom: none; }
+  .source-list a { color: var(--primary); text-decoration: none; word-break: break-all; }
+  .source-list a:hover { text-decoration: underline; }
+
+  footer { text-align: center; padding: 36px 20px; font-size: 0.8rem; color: var(--text-muted); }
+
+  @media (max-width: 640px) {
+    .memory-flow { flex-direction: column; }
+    .flow-arrow { transform: rotate(90deg); padding: 4px 0; }
+    .tab-nav { flex-wrap: wrap; max-width: 100%; }
+    .tab-btn { flex: 0 1 auto; padding: 8px 12px; font-size: 0.78rem; }
+    .hero { padding: 44px 20px 40px; }
+    .bar-chart { height: 140px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-badge">🧠 Study Technique</div>
+  <h1>Concrete Examples</h1>
+  <p>Turn abstract ideas into things you can see, touch, and explain — making them stick in your memory.</p>
+</header>
+
+<div class="container">
+  <nav class="tab-nav" id="tabNav">
+    <button class="tab-btn active" data-tab="method">Method</button>
+    <button class="tab-btn" data-tab="memory">Memory</button>
+    <button class="tab-btn" data-tab="brain">Brain &amp; Health</button>
+    <button class="tab-btn" data-tab="example">Applied Example</button>
+    <button class="tab-btn" data-tab="quiz">Quiz</button>
+    <button class="tab-btn" data-tab="sources">Sources</button>
+  </nav>
+
+  <!-- ======================== METHOD ======================== -->
+  <div class="section active" id="method">
+    <h2 class="section-title">The Method</h2>
+    <p class="section-subtitle">Five steps to master any concept using concrete examples.</p>
+
+    <div class="card">
+      <h3><span class="step-number">1</span> 📝 Collect Examples</h3>
+      <p>Write down the examples your teachers and classmates use in class — like the different methods shown for solving a math problem. These are gold.</p>
+    </div>
+    <div class="card">
+      <h3><span class="step-number">2</span> 🔗 Connect to What You Know</h3>
+      <p>Link new ideas to examples you already understand. In a language class, connect new vocabulary to words or phrases you've already learned.</p>
+    </div>
+    <div class="card">
+      <h3><span class="step-number">3</span> 🗣️ Explain to a Friend</h3>
+      <p>Teaching is learning twice. Show and explain the examples to someone else — like convincing your friend about your essay thesis. If you can explain it clearly, you really know it.</p>
+    </div>
+    <div class="card">
+      <h3><span class="step-number">4</span> 🔍 Fact-Check Everything</h3>
+      <p>Be critical! Examples from friends, the internet, and even teachers can sometimes be wrong. Always verify before you rely on them.</p>
+    </div>
+    <div class="card">
+      <h3><span class="step-number">5</span> ✨ Create Your Own</h3>
+      <p>The ultimate test: come up with your own examples for what you learned in class. If you can do this, the concept is truly yours.</p>
+    </div>
+
+    <div class="method-interactive">
+      <h4>🎯 Quick Challenge — Order the Steps</h4>
+      <p class="hint">Drag and drop these steps into the correct order, then check your answer.</p>
+      <ul class="sort-list" id="sortList">
+        <li class="sort-item" draggable="true" data-correct="3"><span class="drag-handle">⠿</span> Explain to a friend</li>
+        <li class="sort-item" draggable="true" data-correct="5"><span class="drag-handle">⠿</span> Create your own examples</li>
+        <li class="sort-item" draggable="true" data-correct="1"><span class="drag-handle">⠿</span> Collect examples from class</li>
+        <li class="sort-item" draggable="true" data-correct="4"><span class="drag-handle">⠿</span> Fact-check everything</li>
+        <li class="sort-item" draggable="true" data-correct="2"><span class="drag-handle">⠿</span> Connect to what you know</li>
+      </ul>
+      <button class="sort-check-btn" onclick="checkSortOrder()">Check Order</button>
+      <div class="sort-feedback" id="sortFeedback"></div>
+    </div>
+  </div>
+
+  <!-- ======================== MEMORY ======================== -->
+  <div class="section" id="memory">
+    <h2 class="section-title">How Memory Works</h2>
+    <p class="section-subtitle">Understanding your memory helps you study smarter.</p>
+
+    <div class="card" style="margin-bottom: 24px;">
+      <h3><span style="background:var(--accent-light);color:var(--accent);width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;">💡</span> Active Effort Matters</h3>
+      <p>Just reading isn't enough. To actually remember, you need to make active efforts:</p>
+      <ul style="margin-top: 10px; padding-left: 20px; font-size: 0.93rem;">
+        <li style="margin-bottom: 6px;"><strong>Pay attention</strong> to the material</li>
+        <li style="margin-bottom: 6px;"><strong>Understand the logic</strong> — process it beyond the surface</li>
+        <li><strong>Elaborate</strong> with related knowledge, examples, and applications</li>
+      </ul>
+    </div>
+
+    <!-- Interactive Effort Meter -->
+    <div class="effort-meter">
+      <h4>📊 How Much Effort Are You Putting In?</h4>
+      <p style="font-size:0.84rem;color:var(--text-muted);margin-bottom:16px;">Click each bar to toggle your study habits and see your retention estimate.</p>
+      <div class="effort-bar-group">
+        <label><span>👁️ Paying Attention</span><span class="tag" id="attTag">OFF</span></label>
+        <div class="effort-track" onclick="toggleEffort('att')">
+          <div class="effort-fill low" id="attBar" style="width:15%;" data-pct="15%"></div>
+        </div>
+      </div>
+      <div class="effort-bar-group">
+        <label><span>🧠 Understanding Logic</span><span class="tag" id="logTag">OFF</span></label>
+        <div class="effort-track" onclick="toggleEffort('log')">
+          <div class="effort-fill low" id="logBar" style="width:15%;" data-pct="15%"></div>
+        </div>
+      </div>
+      <div class="effort-bar-group">
+        <label><span>🔗 Elaborating with Examples</span><span class="tag" id="elaTag">OFF</span></label>
+        <div class="effort-track" onclick="toggleEffort('ela')">
+          <div class="effort-fill low" id="elaBar" style="width:15%;" data-pct="15%"></div>
+        </div>
+      </div>
+      <div class="effort-result" id="effortResult" style="background: #fbe9e7; color: #c62828;">
+        📉 Estimated retention: <strong>~15%</strong> — just reading passively
+      </div>
+    </div>
+
+    <h3 style="font-size: 0.78rem; font-weight: 600; margin: 28px 0 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Click each stage to learn more ↓</h3>
+
+    <div class="memory-flow">
+      <div class="memory-node" data-node="sensory" onclick="showNodeDetail(this)">
+        <div class="node-icon">👁️</div>
+        <div class="node-title">Sensory</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="memory-node" data-node="short" onclick="showNodeDetail(this)">
+        <div class="node-icon">⏱️</div>
+        <div class="node-title">Short-Term</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="memory-node" data-node="working" onclick="showNodeDetail(this)">
+        <div class="node-icon">⚙️</div>
+        <div class="node-title">Working</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="memory-node" data-node="long" onclick="showNodeDetail(this)">
+        <div class="node-icon">🏛️</div>
+        <div class="node-title">Long-Term</div>
+      </div>
+    </div>
+
+    <div class="node-detail" id="detail-sensory"><strong>Sensory Memory</strong> — The first stop. Everything you see, hear, and feel enters here for a fraction of a second. Most of it disappears unless you pay attention to it.</div>
+    <div class="node-detail" id="detail-short"><strong>Short-Term Memory</strong> — Holds a small amount of information (about 7 items) for roughly 20–30 seconds. Think of it as your mental sticky note.</div>
+    <div class="node-detail" id="detail-working"><strong>Working Memory</strong> — Where you actively manipulate information: solving a math problem in your head, comparing two ideas, or forming a sentence. It's your brain's "workbench."</div>
+    <div class="node-detail" id="detail-long"><strong>Long-Term Memory</strong> — The goal! Information stored here can last a lifetime. Concrete examples help move knowledge from working memory into long-term storage.</div>
+
+    <!-- Retention Chart -->
+    <div class="chart-wrapper">
+      <h4>📈 Retention by Study Strategy</h4>
+      <p class="chart-subtitle">How much you remember after 24 hours based on how you studied.</p>
+      <canvas id="retentionChart" width="800" height="320"></canvas>
+    </div>
+  </div>
+
+  <!-- ======================== BRAIN & HEALTH ======================== -->
+  <div class="section" id="brain">
+    <h2 class="section-title">Brain Areas &amp; Health</h2>
+    <p class="section-subtitle">Where memory lives and how to keep it sharp.</p>
+
+    <div class="card brain-card">
+      <div class="brain-emoji">🧩</div>
+      <div>
+        <h4>Hippocampus</h4>
+        <p>Forms new explicit memories and converts them into long-term memories. Think of it as your brain's "save" button.</p>
+      </div>
+    </div>
+    <div class="card brain-card">
+      <div class="brain-emoji">🎯</div>
+      <div>
+        <h4>Prefrontal Cortex</h4>
+        <p>Handles working memory and semantic memory — the region that helps you reason, plan, and understand meaning.</p>
+      </div>
+    </div>
+
+    <div style="margin-top: 28px;">
+      <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 4px;">Keep Your Brain Healthy</h3>
+      <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 4px;">To apply concrete examples successfully, your brain needs to be in good shape!</p>
+      <p style="font-size: 0.78rem; color: var(--text-muted);">(Lumen Learning, 2010)</p>
+    </div>
+    <div class="health-grid">
+      <div class="health-item"><div class="h-icon">😴</div><div class="h-label">Sleep 8–10 hrs</div><div class="h-detail">Memory consolidation happens during sleep</div></div>
+      <div class="health-item"><div class="h-icon">🏃</div><div class="h-label">Exercise Regularly</div><div class="h-detail">Boosts blood flow to the brain</div></div>
+      <div class="health-item"><div class="h-icon">🥗</div><div class="h-label">Eat a Balanced Diet</div><div class="h-detail">Fuel your neurons properly</div></div>
+      <div class="health-item"><div class="h-icon">🧘</div><div class="h-label">Relax</div><div class="h-detail">Stress harms memory formation</div></div>
+    </div>
+
+    <!-- Sleep impact bar chart -->
+    <div class="sleep-chart-box">
+      <h4>🌙 Sleep &amp; Memory Performance</h4>
+      <p class="chart-subtitle">Hover each bar to see how sleep hours affect next-day test scores.</p>
+      <div class="bar-chart" id="sleepChart"></div>
+    </div>
+  </div>
+
+  <!-- ======================== APPLIED EXAMPLE ======================== -->
+  <div class="section" id="example">
+    <h2 class="section-title">Applied Example — Physics</h2>
+    <p class="section-subtitle">See concrete examples in action with Newton's Second Law.</p>
+
+    <div class="formula-box">
+      <div class="formula">F = m · a</div>
+      <div class="formula-desc">The net force on an object equals its mass times its acceleration.<br>Greater force → greater acceleration · Greater mass → less acceleration.</div>
+    </div>
+
+    <div class="card" style="padding: 28px;">
+      <div class="example-step">
+        <div class="step-badge">1</div>
+        <div class="step-content">
+          <h4>Recall a Class Example</h4>
+          <p>Your teacher showed that pushing an empty toy cart vs. a loaded toy cart with the same force makes the empty one accelerate faster — same F, less m, more a.</p>
+        </div>
+      </div>
+      <div class="example-step">
+        <div class="step-badge">2</div>
+        <div class="step-content">
+          <h4>Generate Your Own Example</h4>
+          <p>Kicking a soccer ball vs. a bowling ball — your leg applies roughly the same force, but the soccer ball flies while the bowling ball barely moves. Greater mass, less acceleration!</p>
+        </div>
+      </div>
+      <div class="example-step" style="margin-bottom: 0;">
+        <div class="step-badge">3</div>
+        <div class="step-content">
+          <h4>Explain to a Friend</h4>
+          <p>"Heavier things are harder to speed up! That's why a truck takes longer to start moving from a stop sign compared to a small car."</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- F=ma Slider -->
+    <div class="demo-box">
+      <h4>🎮 Try It — F = ma Calculator</h4>
+      <div class="slider-group">
+        <label><span>Force (F)</span><span id="forceVal">50 N</span></label>
+        <input type="range" id="forceSlider" min="10" max="200" value="50" oninput="updateDemo()">
+      </div>
+      <div class="slider-group">
+        <label><span>Mass (m)</span><span id="massVal">10 kg</span></label>
+        <input type="range" id="massSlider" min="1" max="100" value="10" oninput="updateDemo()">
+      </div>
+      <div class="result-display">
+        <div class="result-value" id="accelResult">5.0 m/s²</div>
+        <div class="result-label">Acceleration (a = F ÷ m)</div>
+      </div>
+
+      <!-- Ball Race -->
+      <div class="ball-race">
+        <h5>⚡ Same Force, Different Masses — Watch Them Race!</h5>
+        <div class="race-lane">
+          <div class="lane-label">⚽ 0.4 kg</div>
+          <div class="race-track"><div class="race-ball" id="ballSoccer" style="background:#fff;border:2px solid #ccc;">⚽</div></div>
+        </div>
+        <div class="race-lane">
+          <div class="lane-label">🎳 6 kg</div>
+          <div class="race-track"><div class="race-ball" id="ballBowling" style="background:#5c6bc0;">🎳</div></div>
+        </div>
+        <div class="race-lane">
+          <div class="lane-label">🚛 1500 kg</div>
+          <div class="race-track"><div class="race-ball" id="ballTruck" style="background:#78909c;border-radius:8px;width:36px;">🚛</div></div>
+        </div>
+        <button class="race-btn" id="raceBtn" onclick="startRace()">🏁 Kick with 100 N!</button>
+      </div>
+    </div>
+
+    <!-- Example Builder -->
+    <div class="example-builder">
+      <h4>✍️ Now You Try — Create Your Own Example</h4>
+      <p class="eb-hint">Think of a real-world situation where F = ma applies. Write it below and save it!</p>
+      <textarea id="ebInput" placeholder="e.g. Throwing a tennis ball vs. a watermelon with the same arm strength..."></textarea>
+      <div class="eb-actions">
+        <button class="eb-save-btn" onclick="saveExample()">💾 Save Example</button>
+        <span style="font-size:0.82rem;color:var(--text-muted);" id="ebCount">0 examples saved</span>
+      </div>
+      <div class="eb-saved-list" id="ebList"></div>
+    </div>
+  </div>
+
+  <!-- ======================== QUIZ ======================== -->
+  <div class="section" id="quiz">
+    <h2 class="section-title">Check Your Understanding</h2>
+    <p class="section-subtitle">Test what you've learned about concrete examples.</p>
+
+    <div class="quiz-card" data-correct="2" id="q1">
+      <h4>1. What is the first step in using concrete examples?</h4>
+      <button class="quiz-option" onclick="checkAnswer(this,'q1')">Create your own examples immediately</button>
+      <button class="quiz-option" onclick="checkAnswer(this,'q1')">Collect examples from class and teachers</button>
+      <button class="quiz-option" onclick="checkAnswer(this,'q1')">Memorize the textbook definitions</button>
+      <div class="quiz-feedback correct-fb">✅ Start by collecting the examples already given in class — they're your foundation.</div>
+      <div class="quiz-feedback incorrect-fb">❌ Not quite. The first step is to collect and note the examples your teachers and peers share in class.</div>
+    </div>
+    <div class="quiz-card" data-correct="3" id="q2">
+      <h4>2. Why should you explain examples to a friend?</h4>
+      <button class="quiz-option" onclick="checkAnswer(this,'q2')">To impress them with your knowledge</button>
+      <button class="quiz-option" onclick="checkAnswer(this,'q2')">Because the teacher told you to</button>
+      <button class="quiz-option" onclick="checkAnswer(this,'q2')">To reinforce the idea and reveal gaps in understanding</button>
+      <div class="quiz-feedback correct-fb">✅ Teaching others forces you to organize your thoughts and exposes any gaps in your understanding.</div>
+      <div class="quiz-feedback incorrect-fb">❌ The real reason is that explaining to someone else reinforces the concept and helps you find gaps.</div>
+    </div>
+    <div class="quiz-card" data-correct="1" id="q3">
+      <h4>3. Which brain area is most responsible for forming new long-term memories?</h4>
+      <button class="quiz-option" onclick="checkAnswer(this,'q3')">Hippocampus</button>
+      <button class="quiz-option" onclick="checkAnswer(this,'q3')">Prefrontal Cortex</button>
+      <button class="quiz-option" onclick="checkAnswer(this,'q3')">Cerebellum</button>
+      <div class="quiz-feedback correct-fb">✅ The hippocampus forms new explicit memories and converts them into long-term memories.</div>
+      <div class="quiz-feedback incorrect-fb">❌ It's the hippocampus! The prefrontal cortex handles working memory, and the cerebellum is for motor skills.</div>
+    </div>
+    <div class="quiz-card" data-correct="2" id="q4">
+      <h4>4. In Newton's Second Law (F = ma), what happens if you double the mass with the same force?</h4>
+      <button class="quiz-option" onclick="checkAnswer(this,'q4')">Acceleration doubles</button>
+      <button class="quiz-option" onclick="checkAnswer(this,'q4')">Acceleration is halved</button>
+      <button class="quiz-option" onclick="checkAnswer(this,'q4')">Acceleration stays the same</button>
+      <div class="quiz-feedback correct-fb">✅ With the same force and double the mass, a = F/m means acceleration is cut in half.</div>
+      <div class="quiz-feedback incorrect-fb">❌ Since a = F/m, doubling m while keeping F the same gives you half the acceleration.</div>
+    </div>
+    <div class="quiz-card" data-correct="3" id="q5">
+      <h4>5. Why is it important to fact-check examples?</h4>
+      <button class="quiz-option" onclick="checkAnswer(this,'q5')">Only internet sources are wrong</button>
+      <button class="quiz-option" onclick="checkAnswer(this,'q5')">Teachers are always correct, so just check friends</button>
+      <button class="quiz-option" onclick="checkAnswer(this,'q5')">Any source — friends, internet, even teachers — can be wrong</button>
+      <div class="quiz-feedback correct-fb">✅ Everyone can make mistakes. Being critical of all sources is a key part of good learning.</div>
+      <div class="quiz-feedback incorrect-fb">❌ Actually, any source — including teachers — can be wrong sometimes. Always verify!</div>
+    </div>
+
+    <div class="quiz-score" id="quizScore" style="display:none;">
+      <div class="score-num" id="scoreNum"></div>
+      <div class="score-label">out of 5 correct</div>
+      <div class="score-bar"><div class="score-bar-fill" id="scoreBarFill" style="width:0%;"></div></div>
+    </div>
+  </div>
+
+  <!-- ======================== SOURCES ======================== -->
+  <div class="section" id="sources">
+    <h2 class="section-title">Sources</h2>
+    <p class="section-subtitle">Where this information comes from.</p>
+    <div class="card">
+      <ul class="source-list">
+        <li>Lumen Learning. (2010). <em>Parts of the Brain Involved with Memory.</em> <a href="https://courses.lumenlearning.com/waymaker-psychology/chapter/parts-of-the-brain-involved-with-memory/" target="_blank" rel="noopener">lumenlearning.com</a></li>
+        <li>The Learning Scientists. (2016, Aug 25). <em>Learn to Study Using… Concrete Examples.</em> <a href="https://www.learningscientists.org/blog/2016/8/25-1" target="_blank" rel="noopener">learningscientists.org</a></li>
+        <li>The Learning Scientists. (2016, Oct 2). <em>Concrete Examples</em> [Video]. <a href="https://www.youtube.com/watch?v=7wF0lCBMh9Y" target="_blank" rel="noopener">YouTube</a></li>
+        <li>True-Facts. (2019, Sep 2). <em>Become a Better Learner &amp; Improve Learning Skills.</em> <a href="https://medium.com/@True_facts/how-to-become-a-better-learner-and-improve-your-learning-skills-d9f9e45de4f" target="_blank" rel="noopener">Medium</a></li>
+        <li>Hill Learning Center. (2022, Mar 29). <em>What Are Learning Differences?</em> <a href="https://www.hillcenter.org/what-are-learning-differences/" target="_blank" rel="noopener">hillcenter.org</a></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<footer>Made for freshmen learning better study strategies.</footer>
+
+<script>
+  // ===== Tabs =====
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.tab).classList.add('active');
+      if (btn.dataset.tab === 'memory') drawRetentionChart();
+      if (btn.dataset.tab === 'brain') buildSleepChart();
+    });
+  });
+
+  // ===== Memory Nodes =====
+  function showNodeDetail(el) {
+    document.querySelectorAll('.memory-node').forEach(n => n.classList.remove('active-node'));
+    document.querySelectorAll('.node-detail').forEach(d => d.classList.remove('visible'));
+    el.classList.add('active-node');
+    document.getElementById('detail-' + el.dataset.node).classList.add('visible');
+  }
+
+  // ===== Effort Meter =====
+  const effortState = { att: false, log: false, ela: false };
+  function toggleEffort(key) {
+    effortState[key] = !effortState[key];
+    const on = effortState[key];
+    const bar = document.getElementById(key + 'Bar');
+    const tag = document.getElementById(key + 'Tag');
+    bar.style.width = on ? '85%' : '15%';
+    bar.setAttribute('data-pct', on ? '85%' : '15%');
+    bar.className = 'effort-fill ' + (on ? 'max' : 'low');
+    tag.textContent = on ? 'ON' : 'OFF';
+    tag.style.background = on ? '#e8f5e9' : '';
+    tag.style.color = on ? '#2e7d32' : '';
+    const count = [effortState.att, effortState.log, effortState.ela].filter(Boolean).length;
+    const el = document.getElementById('effortResult');
+    const levels = [
+      { bg: '#fbe9e7', color: '#c62828', text: '📉 Estimated retention: <strong>~15%</strong> — just reading passively' },
+      { bg: '#fff3e0', color: '#e65100', text: '📊 Estimated retention: <strong>~40%</strong> — getting better, keep going!' },
+      { bg: '#e8f5e9', color: '#2e7d32', text: '📈 Estimated retention: <strong>~65%</strong> — strong effort, almost there!' },
+      { bg: '#e8eef4', color: '#1a3a5c', text: '🚀 Estimated retention: <strong>~90%</strong> — maximum learning power!' },
+    ];
+    const l = levels[count];
+    el.style.background = l.bg; el.style.color = l.color; el.innerHTML = l.text;
+  }
+
+  // ===== Retention Chart (Canvas) =====
+  let retentionDrawn = false;
+  function drawRetentionChart() {
+    if (retentionDrawn) return;
+    retentionDrawn = true;
+    const canvas = document.getElementById('retentionChart');
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.parentElement.getBoundingClientRect();
+    const W = rect.width - 48, H = 280;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    ctx.scale(dpr, dpr);
+
+    const data = [
+      { label: 'Re-reading', value: 20, color: '#ef5350' },
+      { label: 'Highlighting', value: 25, color: '#ff7043' },
+      { label: 'Summarizing', value: 40, color: '#ffa726' },
+      { label: 'Self-testing', value: 60, color: '#66bb6a' },
+      { label: 'Teaching\nothers', value: 75, color: '#42a5f5' },
+      { label: 'Concrete\nexamples', value: 85, color: '#3d5a80' },
+    ];
+    const pad = { top: 20, bottom: 50, left: 44, right: 16 };
+    const chartW = W - pad.left - pad.right;
+    const chartH = H - pad.top - pad.bottom;
+    const gap = chartW / data.length;
+    const barW = Math.min(gap * 0.6, 60);
+
+    let progress = 0;
+    function animate() {
+      progress = Math.min(progress + 0.03, 1);
+      const ease = 1 - Math.pow(1 - progress, 3);
+      ctx.clearRect(0, 0, W, H);
+
+      // Grid
+      ctx.strokeStyle = '#e5e2db'; ctx.lineWidth = 1;
+      ctx.font = '11px Inter, sans-serif'; ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'right';
+      for (let i = 0; i <= 4; i++) {
+        const y = pad.top + chartH - (chartH * (i * 25) / 100);
+        ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+        ctx.fillText(i * 25 + '%', pad.left - 8, y + 4);
+      }
+
+      data.forEach((d, i) => {
+        const x = pad.left + gap * i + (gap - barW) / 2;
+        const barH = (d.value / 100) * chartH * ease;
+        const y = pad.top + chartH - barH;
+        ctx.fillStyle = d.color;
+        const r = 6;
+        ctx.beginPath();
+        ctx.moveTo(x + r, y); ctx.lineTo(x + barW - r, y);
+        ctx.quadraticCurveTo(x + barW, y, x + barW, y + r);
+        ctx.lineTo(x + barW, pad.top + chartH); ctx.lineTo(x, pad.top + chartH);
+        ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.fill();
+        if (ease > 0.5) {
+          ctx.fillStyle = '#2b2d42'; ctx.textAlign = 'center';
+          ctx.font = 'bold 11px Inter, sans-serif';
+          ctx.fillText(Math.round(d.value * ease) + '%', x + barW / 2, y - 6);
+        }
+      });
+
+      ctx.fillStyle = '#6b7280'; ctx.font = '10.5px Inter, sans-serif'; ctx.textAlign = 'center';
+      data.forEach((d, i) => {
+        const x = pad.left + gap * i + gap / 2;
+        d.label.split('\n').forEach((line, li) => {
+          ctx.fillText(line, x, pad.top + chartH + 16 + li * 13);
+        });
+      });
+      if (progress < 1) requestAnimationFrame(animate);
+    }
+    animate();
+  }
+
+  // ===== Sleep Bar Chart =====
+  let sleepBuilt = false;
+  function buildSleepChart() {
+    if (sleepBuilt) return;
+    sleepBuilt = true;
+    const container = document.getElementById('sleepChart');
+    const data = [
+      { hrs: '4h', score: 45, tip: '4 hrs → Severe impairment, ~45%', color: '#ef5350' },
+      { hrs: '5h', score: 55, tip: '5 hrs → Poor focus, ~55%', color: '#ff7043' },
+      { hrs: '6h', score: 65, tip: '6 hrs → Below average, ~65%', color: '#ffa726' },
+      { hrs: '7h', score: 75, tip: '7 hrs → Decent, ~75%', color: '#ffca28' },
+      { hrs: '8h', score: 88, tip: '8 hrs → Great! ~88%', color: '#66bb6a' },
+      { hrs: '9h', score: 92, tip: '9 hrs → Excellent! ~92%', color: '#42a5f5' },
+      { hrs: '10h', score: 90, tip: '10 hrs → Optimal zone, ~90%', color: '#3d5a80' },
+    ];
+    data.forEach((d, i) => {
+      const col = document.createElement('div');
+      col.className = 'bar-col';
+      col.innerHTML = `<div class="bar-val">${d.score}%</div><div class="bar" style="height:0%;background:${d.color};"></div><div class="bar-label">${d.hrs}</div><div class="bar-tooltip">${d.tip}</div>`;
+      container.appendChild(col);
+      setTimeout(() => { col.querySelector('.bar').style.height = d.score + '%'; }, 100 + i * 80);
+    });
+  }
+
+  // ===== F=ma Demo =====
+  function updateDemo() {
+    const f = parseFloat(document.getElementById('forceSlider').value);
+    const m = parseFloat(document.getElementById('massSlider').value);
+    document.getElementById('forceVal').textContent = f + ' N';
+    document.getElementById('massVal').textContent = m + ' kg';
+    document.getElementById('accelResult').textContent = (f / m).toFixed(1) + ' m/s²';
+  }
+
+  // ===== Ball Race =====
+  let raceRunning = false;
+  function startRace() {
+    if (raceRunning) return;
+    raceRunning = true;
+    const btn = document.getElementById('raceBtn');
+    // Reset
+    ['ballSoccer','ballBowling','ballTruck'].forEach(id => {
+      const el = document.getElementById(id);
+      el.style.transition = 'none'; el.style.left = '4px';
+    });
+    btn.textContent = '⏳ Racing...';
+    setTimeout(() => {
+      ['ballSoccer','ballBowling','ballTruck'].forEach(id => {
+        document.getElementById(id).style.transition = 'left 2s cubic-bezier(.22,.61,.36,1)';
+      });
+      document.getElementById('ballSoccer').style.left = 'calc(100% - 36px)';
+      document.getElementById('ballBowling').style.left = '38%';
+      document.getElementById('ballTruck').style.left = '6%';
+    }, 50);
+    setTimeout(() => {
+      btn.textContent = '🔄 Reset & Kick Again!';
+      raceRunning = false;
+    }, 2200);
+  }
+
+  // ===== Example Builder =====
+  let savedExamples = [];
+  function saveExample() {
+    const input = document.getElementById('ebInput');
+    const text = input.value.trim();
+    if (!text) return;
+    savedExamples.push(text);
+    input.value = '';
+    document.getElementById('ebCount').textContent = savedExamples.length + ' example' + (savedExamples.length > 1 ? 's' : '') + ' saved';
+    const item = document.createElement('div');
+    item.className = 'eb-saved-item';
+    item.innerHTML = `<span class="eb-num">${savedExamples.length}</span><span>${text}</span>`;
+    document.getElementById('ebList').appendChild(item);
+  }
+
+  // ===== Drag & Drop =====
+  const sortList = document.getElementById('sortList');
+  let dragItem = null;
+  sortList.querySelectorAll('.sort-item').forEach(item => {
+    item.addEventListener('dragstart', () => { dragItem = item; setTimeout(() => item.classList.add('dragging'), 0); });
+    item.addEventListener('dragend', () => { item.classList.remove('dragging'); sortList.querySelectorAll('.sort-item').forEach(i => i.classList.remove('over')); dragItem = null; });
+    item.addEventListener('dragover', e => { e.preventDefault(); if (item !== dragItem) item.classList.add('over'); });
+    item.addEventListener('dragleave', () => item.classList.remove('over'));
+    item.addEventListener('drop', e => {
+      e.preventDefault(); item.classList.remove('over');
+      if (dragItem && item !== dragItem) {
+        const all = [...sortList.querySelectorAll('.sort-item')];
+        if (all.indexOf(dragItem) < all.indexOf(item)) item.after(dragItem); else item.before(dragItem);
+      }
+    });
+  });
+
+  function checkSortOrder() {
+    const items = sortList.querySelectorAll('.sort-item');
+    let allCorrect = true;
+    items.forEach((item, i) => {
+      item.classList.remove('correct-pos', 'wrong-pos');
+      if (parseInt(item.dataset.correct) === i + 1) item.classList.add('correct-pos');
+      else { item.classList.add('wrong-pos'); allCorrect = false; }
+    });
+    const fb = document.getElementById('sortFeedback');
+    fb.innerHTML = allCorrect ? '🎉 <strong>Perfect!</strong> You got the correct order!' : '🔄 Not quite — try rearranging and check again!';
+    fb.style.color = allCorrect ? '#2e7d32' : '#c62828';
+  }
+
+  // ===== Quiz =====
+  let answered = 0, correct = 0;
+  function checkAnswer(btn, qId) {
+    const card = document.getElementById(qId);
+    const correctIdx = parseInt(card.dataset.correct);
+    const options = card.querySelectorAll('.quiz-option');
+    const clickedIdx = Array.from(options).indexOf(btn) + 1;
+    const isCorrect = clickedIdx === correctIdx;
+    options.forEach((opt, i) => {
+      opt.classList.add('selected');
+      if (i + 1 === correctIdx) opt.classList.add('correct');
+      else if (opt === btn && !isCorrect) opt.classList.add('incorrect');
+    });
+    if (isCorrect) { card.querySelector('.correct-fb').classList.add('show'); correct++; }
+    else card.querySelector('.incorrect-fb').classList.add('show');
+    answered++;
+    if (answered === 5) {
+      const scoreBox = document.getElementById('quizScore');
+      scoreBox.style.display = 'block';
+      document.getElementById('scoreNum').textContent = correct;
+      setTimeout(() => { document.getElementById('scoreBarFill').style.width = (correct / 5 * 100) + '%'; }, 100);
+      scoreBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+</script>
+</body>
+</html>
