@@ -1,2 +1,2 @@
 # concrete-examples
-learn concrete examples from this webpage! 
+learn the method of "concrete examples" from this webpage! 
